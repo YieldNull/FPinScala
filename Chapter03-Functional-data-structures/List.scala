@@ -117,7 +117,40 @@ object List {
   /* Exercise13 */
   def foldLeftViaFoldRight[A,B](l: List[A], z: B)(f: (B, A) => B): B =
     foldRight(reverse(l), z)((x, acc) => f(acc, x))
-  
+ 
+  /* Use function to delay evaluation
+   *
+   * l : [X1, X2, X3......Xn]
+   *
+   * acc = id // init
+   *
+   * acc = (b: B) => id(f(b, Xn+1))  // n + 1
+   *
+   * acc = (b: B) =>
+   *        ((b2 :B) => id(f(b2, Xn+1))) (f(b, Xn)) // pass f(b, Xn) to b2
+   *     = (b: B) =>
+   *        id(f(f(b, Xn), Xn+1)) // n
+   *
+   *    ...........
+   * 
+   * acc = (b: B) =>
+   *        id(f(...f(f(f(f(b, X1), X2), X3), X4)..., Xn))
+   * 
+   * acc(z) = foldLeft(l, z)(f)
+   * */
+  def foldLeftViaFoldRight2[A,B](l: List[A], z: B)(f: (B, A) => B): B = {
+    val g: (A, (B => B)) => B => B =
+      (a: A, acc: (B => B)) => 
+        (b: B) => acc(f(b, a))
+
+    val id: (B => B) = (b: B) => b
+    
+    val delay: (B => B) = foldRight(l, id)(g)
+
+    delay(z)
+  }
+
+
   /* Exercise14 */
   def append[A](la: List[A], lb: List[A]) =
     foldRight(la, lb)(Cons(_, _))
